@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: {{ .Values.userEmail }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kubeip.name" . }}-sa
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kubeip.name" . }}-sa
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: {{ include "kubeip.name" . }}-sa
+  apiGroup: rbac.authorization.k8s.io

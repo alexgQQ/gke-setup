@@ -1,0 +1,28 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "traefik.name" . }}-deployment
+  labels:
+    app: {{ include "traefik.name" . }}
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "traefik.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "traefik.name" . }}
+    spec:
+      serviceAccountName: {{ include "traefik.name" . }}-account
+      containers:
+        - name: traefik
+          image: {{ .Values.image.repository }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --api.insecure
+            - --providers.kubernetesingress
+          ports:
+            - name: web
+              containerPort: 80

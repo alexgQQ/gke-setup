@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubeip.name" . }}
+  labels:
+    {{- include "kubeip.labels" . | nindent 4 }}
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "kubeip.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kubeip.selectorLabels" . | nindent 8 }}
+    spec:
+      priorityClassName: system-cluster-critical
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.kubeip_nodepool }}
+      containers:
+      - name: kubeip
+        image: {{ .Values.image.repository }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        volumeMounts:
+        - name: google-cloud-key
+          mountPath: /var/secrets/google
+        env:
+        - name: "KUBEIP_LABELKEY"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_LABELKEY"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_LABELVALUE"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_LABELVALUE"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_NODEPOOL"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_NODEPOOL"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_FORCEASSIGNMENT"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_FORCEASSIGNMENT"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_ORDERBYLABELKEY"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_ORDERBYLABELKEY"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_ORDERBYDESC"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_ORDERBYDESC"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_ADDITIONALNODEPOOLS"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_ADDITIONALNODEPOOLS"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_COPYLABELS"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_COPYLABELS"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_CLEARLABELS"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_CLEARLABELS"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_DRYRUN"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_DRYRUN"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_TICKER"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_TICKER"
+              name: {{ include "kubeip.name" . }}-config
+        - name: "KUBEIP_ALLNODEPOOLS"
+          valueFrom:
+            configMapKeyRef:
+              key: "KUBEIP_ALLNODEPOOLS"
+              name: {{ include "kubeip.name" . }}-config
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/google/key.json
+      restartPolicy: Always
+      serviceAccountName: {{ include "kubeip.name" . }}-sa
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: {{ include "kubeip.name" . }}-key

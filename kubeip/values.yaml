@@ -1,0 +1,14 @@
+# The cluster to run in and the specific nodepools that
+# should run kubeip and get a public ip assigned
+cluster:
+  name: primary-cluster
+  kubeip_nodepool: kubeip-node
+  public_nodepool: primary-node
+
+# kubeip requires cluster admin rights so an end user is needed
+# to authorize the resource
+userEmail: user@gmail.com
+
+image:
+  repository: doitintl/kubeip
+  pullPolicy: IfNotPresent

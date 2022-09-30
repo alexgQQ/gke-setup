@@ -1,0 +1,24 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "whoami.name" . }}-deployment
+  labels:
+    app: {{ include "whoami.name" . }}
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "whoami.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "whoami.name" . }}
+    spec:
+      containers:
+        - name: whoami
+          image: {{ .Values.image.repository }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: web
+              containerPort: 80
