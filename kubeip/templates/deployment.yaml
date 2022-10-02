@@ -30,66 +30,10 @@ spec:
         - name: google-cloud-key
           mountPath: /var/secrets/google
         env:
-        - name: "KUBEIP_LABELKEY"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_LABELKEY"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_LABELVALUE"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_LABELVALUE"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_NODEPOOL"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_NODEPOOL"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_FORCEASSIGNMENT"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_FORCEASSIGNMENT"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_ORDERBYLABELKEY"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_ORDERBYLABELKEY"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_ORDERBYDESC"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_ORDERBYDESC"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_ADDITIONALNODEPOOLS"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_ADDITIONALNODEPOOLS"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_COPYLABELS"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_COPYLABELS"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_CLEARLABELS"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_CLEARLABELS"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_DRYRUN"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_DRYRUN"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_TICKER"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_TICKER"
-              name: {{ include "kubeip.name" . }}-config
-        - name: "KUBEIP_ALLNODEPOOLS"
-          valueFrom:
-            configMapKeyRef:
-              key: "KUBEIP_ALLNODEPOOLS"
-              name: {{ include "kubeip.name" . }}-config
+          {{- range $key, $val := .Values.env_config }}
+        - name: {{ $key }}
+          value: {{ $val | quote }}
+          {{- end }}
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /var/secrets/google/key.json
       restartPolicy: Always
