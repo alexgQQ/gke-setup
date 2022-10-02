@@ -1,8 +1,8 @@
 # Personal GKE Setup
 
-This repo is a collection of resources for running a low cost GKE cluster as an http backend with multiple services. This works by using cloudflare dns to route traffic to a k8s node ip and directing requests with an edge router. The motivation for this is to be able to use GKE instances with all the managed goodness but without having to use their expensive load balancers. Here's my approach to the problem. 
+This repo is a collection of resources for running a low cost GKE cluster as an http backend with multi-service capability. This works by using cloudflare dns to route traffic to a k8s node and directing requests with an edge router. The motivation for this is to be able to use GKE instances with all the managed goodness but without having to use their expensive load balancers.
 
-Getting an external ip for a cluster isn't difficult. GKE nodes get a public ip by default but they have this habbit of changing after auto updates occur, and I want those auto updates. To keep a consistent external ip we can reserve a static ip with Google and use [kubeip](https://kubeip.com/) to monitor and assign this ip to the node. Handling traffic into our cluster isn't difficult either. Aside from a load balancer, the [NodePort service](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport) can be exposed to public traffic through a nodes external ip. The caveat is that by default only ports within 30000-32767 are exposed and using lower ports is prohibited. Keep this in mind for later. To facilitate multiple services under this NodePOrt we can make use of [traefik](https://doc.traefik.io/traefik/) as an edge router. This will handle http traffic and will dynamically discover internal services and route them based on path mapping rules defined. Finally we just need a DNS provider. Google Cloud DNS seems obvious but that also costs money and is lacking a specific feature. Instead we'll use Cloudflare, not only for the free tier usage on a single zone, but also for the ability to use Cloudflare [Origin Rules](https://developers.cloudflare.com/rules/origin-rules/) to do a port rewrite and direct http traffic to our specific port. That should be all we need.
+For starters getting an external ip for a cluster isn't difficult. GKE nodes get a public ip by default but they have this habbit of changing after auto updates occur, and I want those auto updates. To keep a consistent external ip we can reserve a static ip with Google and use [kubeip](https://kubeip.com/) to monitor and assign this ip to the node. Handling traffic into our cluster isn't difficult either. Aside from a load balancer, the [NodePort service](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport) can be exposed to external traffic through a node's external ip. The caveat is that by default only ports within 30000-32767 are exposed and using lower ports is prohibited. Keep this in mind for later. To facilitate multiple services we can make use of [traefik](https://doc.traefik.io/traefik/) as an edge router. This will handle http traffic and will dynamically discover internal services and route them based on path mapping rules we defined. Finally we just need a DNS provider. Google Cloud DNS seems obvious but that also costs money and is lacking a specific feature. Instead we'll use Cloudflare, not only for the free tier usage on a single zone, but also for the ability to use Cloudflare [Origin Rules](https://developers.cloudflare.com/rules/origin-rules/) to do a port rewrite and direct http traffic to our specific node port.
 
 
 ## Install
@@ -20,26 +20,25 @@ Additionally you will need:
 
 If you have all that, authorize and configure your gcloud sdk client
 ```bash
+export GCP_PROJECT=<gcp project id>
+export GCP_ZONE=<gcp zone>
+
 gcloud auth application-default login
-gcloud config set project <project id>
+gcloud config set project $GCP_PROJECT
 ```
 
 ### terraform
 
-The `/terraform` directory contains the terraform for all the resources needed. You will need to populate a `terraform.tfvars` in that directory with the following desired configuration. The cloudlfare token requires edit permissions for the zones origin ruls and dns configuration.
-```
+The `/terraform` directory contains the terraform for all the resources needed. You will need to populate a `terraform.tfvars` file in that directory with the following desired configuration. The [cloudlfare token](https://developers.cloudflare.com/api/get-started/create-token/) requires edit permissions for the zones origin ruls and dns configuration.
+```bash
+echo "
 gke_project          = <gcp project id>
 gke_zone             = <gcp zone>
 gke_region           = <gcp region>
 cloudflare_api_token = <cloudflare token>
 cloudflare_zone_id   = <cloudflare zone id>
 cloudflare_domain    = <mydomain.com>
-```
-
-Also save these for later.
-```bash
-export GCP_PROJECT=<gcp project id>
-export GCP_ZONE=<gcp zone>
+" > terraform/terraform.tfvars
 ```
 
 Once that is in place you can initialize the module and apply it. This will create all our resources and sets up dns to route to `api.mydomain.com`.
@@ -49,7 +48,7 @@ terraform -chdir=terraform plan  # If you want to check the resources
 terraform -chdir=terraform apply
 ```
 
-It takes 5-10 minutes to fully provision. After it is done you'll need to authenticate and connect to the primary-cluster.
+It takes 5-10 minutes to fully provision. After it is done you'll need to authenticate and connect to the cluster. By default the cluster name is primary-cluster.
 ```bash
 gcloud container clusters get-credentials --region $GCP_ZONE primary-cluster
 ```
@@ -58,7 +57,7 @@ To remove the resources.
 ```bash
 terraform -chdir=terraform destroy
 ```
-As a note, destroying the resources through terraform will not remove the cloudflare ruleset that is created. It must be manually removed via their api as free tier accounts are only allowed one ruleset. Using a cloudflare api token with read and write access to your account rulesets, get the ruleset id and then delete it.
+As a note, destroying the resources through terraform doesn't always remove the cloudflare ruleset that is created. It must be manually removed via their api as free tier accounts are only allowed one ruleset. Using a cloudflare api token with read and write access to your account rulesets, get the ruleset id and then delete it.
 ```bash
 # Grab the custom ruleset id and then delete
 curl -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets" -H "Authorization: Bearer "$CLOUDFLARE_API_TOKEN"" -H "Content-Type: application/json"

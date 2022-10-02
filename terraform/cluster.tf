@@ -83,7 +83,7 @@ resource "google_compute_firewall" "gke_nodeport_allow" {
 
   allow {
     protocol = "tcp"
-    ports    = ["30000"]
+    ports    = ["${var.gke_node_port}"]
   }
 
   source_ranges = ["0.0.0.0/0"]
