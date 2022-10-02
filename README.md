@@ -1,4 +1,4 @@
-# Personal GKE Setup
+# GKE Setup
 
 This repo is a collection of resources for running a low cost GKE cluster as an http backend with multi-service capability. This works by using cloudflare dns to route traffic to a k8s node and directing requests with an edge router. The motivation for this is to be able to use GKE instances with all the managed goodness but without having to use their expensive load balancers.
 
@@ -8,15 +8,15 @@ For starters getting an external ip for a cluster isn't difficult. GKE nodes get
 ## Install
 
 This install requires the following software:
-    * [gcloud](https://cloud.google.com/sdk/docs/install)
-    * [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
-    * [helm](https://helm.sh/docs/intro/install/)
-    * [terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
+* [gcloud](https://cloud.google.com/sdk/docs/install)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+* [helm](https://helm.sh/docs/intro/install/)
+* [terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli)
 
 Additionally you will need:
-    * An active google cloud project with billing enabled
-    * A cloudflare account (free tier works fine)
-    * A domain available to register
+* An active google cloud project with billing enabled
+* A cloudflare account (free tier works fine)
+* A domain available to register
 
 If you have all that, authorize and configure your gcloud sdk client
 ```bash
@@ -32,8 +32,8 @@ gcloud config set project $GCP_PROJECT
 The `/terraform` directory contains the terraform for all the resources needed. You will need to populate a `terraform.tfvars` file in that directory with the following desired configuration. The [cloudlfare token](https://developers.cloudflare.com/api/get-started/create-token/) requires edit permissions for the zones origin ruls and dns configuration.
 ```bash
 echo "
-gke_project          = <gcp project id>
-gke_zone             = <gcp zone>
+gke_project          = $GCP_PROJECT
+gke_zone             = $GCP_ZONE
 gke_region           = <gcp region>
 cloudflare_api_token = <cloudflare token>
 cloudflare_zone_id   = <cloudflare zone id>
