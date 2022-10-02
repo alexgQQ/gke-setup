@@ -5,3 +5,8 @@ image:
 # This port will be exposed to external traffic
 service:
   nodePort: 30000
+
+# Cli arguments for the traefik pod
+cli_config:
+  - --api.insecure
+  - --providers.kubernetesingress
